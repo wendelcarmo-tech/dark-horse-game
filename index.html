@@ -2,13 +2,13 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dark Horse: Corrida Presidencial</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; }
         body {
             background-color: #1a1a24;
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -26,9 +26,9 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: #000;
         }
-        canvas { background: linear-gradient(to bottom, #74b9ff, #dfe6e9); display: block; }
-        
+        canvas { background: linear-gradient(to bottom, #74b9ff, #dfe6e9); display: block; width: 100%; height: 100%; }
         .screen {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -47,291 +47,273 @@
             display: flex;
             justify-content: space-between;
             font-weight: bold;
-            font-size: 15px;
+            font-size: 14px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
             z-index: 10;
         }
-        .section-title { margin-top: 15px; margin-bottom: 5px; font-size: 14px; color: #f39c12; text-transform: uppercase; }
-        .btn-group { display: flex; gap: 15px; margin-bottom: 15px; }
+        .section-title { margin-top: 10px; margin-bottom: 5px; font-size: 13px; color: #f39c12; text-transform: uppercase; }
+        .btn-group { display: flex; gap: 10px; margin-bottom: 10px; }
         .btn {
             border: none;
             color: white;
-            padding: 12px 20px;
-            font-size: 16px;
+            padding: 12px 18px;
+            font-size: 15px;
             font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
-            box-shadow: 0 4px rgba(0,0,0,0.3);
             user-select: none;
-            transition: all 0.2s;
         }
-        .btn:active { transform: translateY(2px); }
         .btn-selected { outline: 3px solid #fff; transform: scale(1.05); }
-        
         .btn-lula { background: #e74c3c; }
         .btn-flavio { background: #3498db; }
         .btn-prender { background: #c0392b; }
         .btn-soltar { background: #27ae60; }
-        .btn-start { background: #f39c12; margin-top: 15px; width: 200px; }
-        .btn-jump { background: #f39c12; margin-top: 15px; width: 250px; }
+        .btn-start { background: #f39c12; margin-top: 15px; width: 220px; font-size: 18px; }
+        .btn-jump { background: #f39c12; margin-top: 10px; width: 250px; padding: 15px; font-size: 18px; }
     </style>
 </head>
 <body>
 
     <div id="game-container">
-        <!-- HUD -->
         <div class="hud">
-            <span id="daysLeft" style="color: #f1c40f;">Dias p/ Eleição: 30s</span>
+            <span id="daysLeft" style="color: #f1c40f;">Eleição: 30s</span>
             <span id="playerScore" style="color: #2ecc71;">Você: 0</span>
             <span id="cpuScore" style="color: #e74c3c;">STF / IA: 0</span>
         </div>
 
-        <!-- Tela de Seleção Inicial -->
         <div id="startScreen" class="screen">
             <h2>DARK HORSE: CORRIDA ELEITORAL</h2>
             
-            <div class="section-title">1. Quem você quer perseguir?</div>
+            <div class="section-title">1. Alvo do Cavalo:</div>
             <div class="btn-group">
-                <button class="btn btn-lula btn-selected" id="targetLula" onclick="selectTarget('LULA')">LULA</button>
-                <button class="btn btn-flavio" id="targetFlavio" onclick="selectTarget('FLÁVIO')">FLÁVIO</button>
+                <button type="button" class="btn btn-lula btn-selected" id="targetLula">LULA</button>
+                <button type="button" class="btn btn-flavio" id="targetFlavio">FLÁVIO</button>
             </div>
 
-            <div class="section-title">2. Seu objetivo até a eleição:</div>
+            <div class="section-title">2. Seu objetivo:</div>
             <div class="btn-group">
-                <button class="btn btn-prender btn-selected" id="goalPrender" onclick="selectGoal('PRENDER')">PRENDER</button>
-                <button class="btn btn-soltar" id="goalSoltar" onclick="selectGoal('SOLTAR')">SOLTAR</button>
+                <button type="button" class="btn btn-prender btn-selected" id="goalPrender">PRENDER</button>
+                <button type="button" class="btn btn-soltar" id="goalSoltar">SOLTAR</button>
             </div>
 
-            <button class="btn btn-start" onclick="startGame()">INICIAR JOGO</button>
+            <button type="button" class="btn btn-start" id="startBtn">INICIAR JOGO</button>
         </div>
 
-        <!-- Tela de Fim de Jogo -->
         <div id="endScreen" class="screen" style="display: none;">
-            <h1 id="winnerText">CHEGOU O DIA DA ELEIÇÃO!</h1>
-            <p id="finalScoreText" style="margin: 15px 0; font-size: 18px; white-space: pre-line;"></p>
-            <button class="btn btn-soltar" onclick="resetGame()">Jogar Novamente</button>
+            <h1 id="winnerText">FIM DA ELEIÇÃO</h1>
+            <p id="finalScoreText" style="margin: 15px 0; font-size: 16px; white-space: pre-line;"></p>
+            <button type="button" class="btn btn-soltar" id="restartBtn">Jogar Novamente</button>
         </div>
 
         <canvas id="gameCanvas" width="800" height="400"></canvas>
     </div>
 
-    <button class="btn btn-jump" id="jumpBtn">PULAR (Toque / Espaço)</button>
+    <button type="button" class="btn btn-jump" id="jumpBtn">PULAR (Toque / Espaço)</button>
 
 <script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+window.addEventListener('load', () => {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-let selectedTarget = 'LULA';
-let selectedGoal = 'PRENDER';
+    let selectedTarget = 'LULA';
+    let selectedGoal = 'PRENDER';
+    let cpuGoal = 'SOLTAR';
+    let playerScore = 0;
+    let cpuScore = 0;
+    let daysLeft = 30;
+    let gameRunning = false;
+    let timerInterval = null;
 
-let cpuGoal = 'SOLTAR';
-let playerScore = 0;
-let cpuScore = 0;
-let daysLeft = 30;
-let gameRunning = false;
-let timerInterval;
+    const horse = { x: 150, y: 280, width: 60, height: 50, vy: 0, gravity: 0.8, jumpPower: -14, grounded: false };
+    let targetCandidate = { name: 'LULA', x: 650, y: 290, width: 45, height: 60, color: '#e74c3c' };
+    let pusherCandidate = { name: 'FLÁVIO', x: 30, y: 290, width: 45, height: 60, color: '#3498db' };
+    let decrees = [];
 
-const horse = { x: 150, y: 280, width: 60, height: 50, vy: 0, gravity: 0.8, jumpPower: -14, grounded: false };
+    // Seleções da Tela Inicial
+    document.getElementById('targetLula').onclick = () => {
+        selectedTarget = 'LULA';
+        document.getElementById('targetLula').classList.add('btn-selected');
+        document.getElementById('targetFlavio').classList.remove('btn-selected');
+    };
+    document.getElementById('targetFlavio').onclick = () => {
+        selectedTarget = 'FLÁVIO';
+        document.getElementById('targetFlavio').classList.add('btn-selected');
+        document.getElementById('targetLula').classList.remove('btn-selected');
+    };
+    document.getElementById('goalPrender').onclick = () => {
+        selectedGoal = 'PRENDER';
+        document.getElementById('goalPrender').classList.add('btn-selected');
+        document.getElementById('goalSoltar').classList.remove('btn-selected');
+    };
+    document.getElementById('goalSoltar').onclick = () => {
+        selectedGoal = 'SOLTAR';
+        document.getElementById('goalSoltar').classList.add('btn-selected');
+        document.getElementById('goalPrender').classList.remove('btn-selected');
+    };
 
-// Candidatos no cenário
-let targetCandidate = { name: 'LULA', x: 650, y: 290, width: 45, height: 60, color: '#e74c3c' };
-let pusherCandidate = { name: 'FLÁVIO', x: 30, y: 290, width: 45, height: 60, color: '#3498db' };
-
-let decrees = [];
-
-function selectTarget(target) {
-    selectedTarget = target;
-    document.getElementById('targetLula').classList.toggle('btn-selected', target === 'LULA');
-    document.getElementById('targetFlavio').classList.toggle('btn-selected', target === 'FLÁVIO');
-}
-
-function selectGoal(goal) {
-    selectedGoal = goal;
-    document.getElementById('goalPrender').classList.toggle('btn-selected', goal === 'PRENDER');
-    document.getElementById('goalSoltar').classList.toggle('btn-selected', goal === 'SOLTAR');
-}
-
-function startGame() {
-    cpuGoal = selectedGoal === 'PRENDER' ? 'SOLTAR' : 'PRENDER';
-    
-    // Define posições e cores com base na escolha
-    if (selectedTarget === 'LULA') {
-        targetCandidate = { name: 'LULA', x: 650, y: 290, width: 45, height: 60, color: '#e74c3c' };
-        pusherCandidate = { name: 'FLÁVIO', x: 30, y: 290, width: 45, height: 60, color: '#3498db' };
-    } else {
-        targetCandidate = { name: 'FLÁVIO', x: 650, y: 290, width: 45, height: 60, color: '#3498db' };
-        pusherCandidate = { name: 'LULA', x: 30, y: 290, width: 45, height: 60, color: '#e74c3c' };
-    }
-
-    document.getElementById('startScreen').style.display = 'none';
-    playerScore = 0;
-    cpuScore = 0;
-    daysLeft = 30;
-    gameRunning = true;
-    decrees = [];
-
-    updateHUD();
-
-    clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-        if (gameRunning) {
-            daysLeft--;
-            updateHUD();
-            if (daysLeft <= 0) endGame();
-        }
-    }, 1000);
-
-    requestAnimationFrame(update);
-}
-
-function updateHUD() {
-    document.getElementById('daysLeft').innerText = Dias p/ Eleição: ${daysLeft}s;
-    document.getElementById('playerScore').innerText = Você (${selectedGoal}): ${playerScore};
-    document.getElementById('cpuScore').innerText = Máquina (${cpuGoal}): ${cpuScore};
-}
-
-function spawnDecree() {
-    const isPrender = Math.random() > 0.5;
-    decrees.push({
-        x: canvas.width,
-        y: Math.random() > 0.5 ? 200 : 280,
-        width: 75, height: 35,
-        type: isPrender ? 'PRENDER' : 'SOLTAR',
-        color: isPrender ? '#c0392b' : '#27ae60'
-    });
-}
-
-setInterval(() => {
-    if (gameRunning) spawnDecree();
-}, 1700);
-
-function update() {
-    if (!gameRunning) return;
-
-    horse.vy += horse.gravity;
-    horse.y += horse.vy;
-
-    if (horse.y >= 280) {
-        horse.y = 280;
-        horse.vy = 0;
-        horse.grounded = true;
-    }
-
-    for (let i = 0; i < decrees.length; i++) {
-        decrees[i].x -= 6.5;
-
-        // Jogador pega o parecer com o Cavalo
-        if (checkCollision(horse, decrees[i])) {
-            if (decrees[i].type === selectedGoal) {
-                playerScore++;
-            } else {
-                cpuScore++;
-            }
-            updateHUD();
-            decrees.splice(i, 1);
-            i--;
-            continue;
+    function startGame() {
+        cpuGoal = selectedGoal === 'PRENDER' ? 'SOLTAR' : 'PRENDER';
+        
+        if (selectedTarget === 'LULA') {
+            targetCandidate = { name: 'LULA', x: 650, y: 290, width: 45, height: 60, color: '#e74c3c' };
+            pusherCandidate = { name: 'FLÁVIO', x: 30, y: 290, width: 45, height: 60, color: '#3498db' };
+        } else {
+            targetCandidate = { name: 'FLÁVIO', x: 650, y: 290, width: 45, height: 60, color: '#3498db' };
+            pusherCandidate = { name: 'LULA', x: 30, y: 290, width: 45, height: 60, color: '#e74c3c' };
         }
 
-        // Se o parecer passar sem ser coletado, a Máquina pontua se for da meta dela
-        if (decrees[i].x + decrees[i].width < 0) {
-            if (decrees[i].type === cpuGoal) {
-                cpuScore++;
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('endScreen').style.display = 'none';
+        playerScore = 0;
+        cpuScore = 0;
+        daysLeft = 30;
+        decrees = [];
+        gameRunning = true;
+
+        updateHUD();
+
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if (gameRunning) {
+                daysLeft--;
                 updateHUD();
+                if (daysLeft <= 0) endGame();
             }
-            decrees.splice(i, 1);
-            i--;
+        }, 1000);
+
+        requestAnimationFrame(update);
+    }
+
+    function updateHUD() {
+        document.getElementById('daysLeft').innerText = Eleição: ${daysLeft}s;
+        document.getElementById('playerScore').innerText = Você (${selectedGoal}): ${playerScore};
+        document.getElementById('cpuScore').innerText = STF / IA: ${cpuScore};
+    }
+
+    function spawnDecree() {
+        if (!gameRunning) return;
+        const isPrender = Math.random() > 0.5;
+        decrees.push({
+            x: canvas.width,
+            y: Math.random() > 0.5 ? 200 : 280,
+            width: 75, height: 35,
+            type: isPrender ? 'PRENDER' : 'SOLTAR',
+            color: isPrender ? '#c0392b' : '#27ae60'
+        });
+    }
+
+    setInterval(spawnDecree, 1600);
+
+    function update() {
+        if (!gameRunning) return;
+
+        horse.vy += horse.gravity;
+        horse.y += horse.vy;
+
+        if (horse.y >= 280) {
+            horse.y = 280;
+            horse.vy = 0;
+            horse.grounded = true;
+        }
+
+        for (let i = 0; i < decrees.length; i++) {
+            decrees[i].x -= 6;
+
+            if (checkCollision(horse, decrees[i])) {
+                if (decrees[i].type === selectedGoal) playerScore++;
+                else cpuScore++;
+                updateHUD();
+                decrees.splice(i, 1);
+                i--;
+                continue;
+            }
+
+            if (decrees[i].x + decrees[i].width < 0) {
+                if (decrees[i].type === cpuGoal) cpuScore++;
+                updateHUD();
+                decrees.splice(i, 1);
+                i--;
+            }
+        }
+
+        draw();
+        requestAnimationFrame(update);
+    }
+
+    function checkCollision(a, b) {
+        return a.x < b.x + b.width && a.x + a.width > b.x &&
+               a.y < b.y + b.height && a.y + a.height > b.y;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#27ae60';
+        ctx.fillRect(0, 330, canvas.width, 70);
+
+        ctx.fillStyle = pusherCandidate.color;
+        ctx.fillRect(pusherCandidate.x, pusherCandidate.y, pusherCandidate.width, pusherCandidate.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText(pusherCandidate.name, pusherCandidate.x - 2, pusherCandidate.y - 10);
+
+        ctx.fillStyle = targetCandidate.color;
+        ctx.fillRect(targetCandidate.x, targetCandidate.y, targetCandidate.width, targetCandidate.height);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(targetCandidate.name, targetCandidate.x + 2, targetCandidate.y - 10);
+
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(horse.x, horse.y, horse.width, horse.height);
+        ctx.fillStyle = '#f1c40f';
+        ctx.fillText("Dark Horse", horse.x - 5, horse.y - 10);
+
+        decrees.forEach(d => {
+            ctx.fillStyle = d.color;
+            ctx.fillRect(d.x, d.y, d.width, d.height);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText("STF: " + d.type, d.x + 6, d.y + 22);
+        });
+    }
+
+    function endGame() {
+        gameRunning = false;
+        clearInterval(timerInterval);
+        
+        const endScreen = document.getElementById('endScreen');
+        const winnerText = document.getElementById('winnerText');
+        const finalScoreText = document.getElementById('finalScoreText');
+
+        let actionText = selectedGoal === 'PRENDER' ? 'preso' : 'solto';
+
+        if (playerScore > cpuScore) {
+            winnerText.innerText = "VITÓRIA ELEITORAL!";
+            winnerText.style.color = "#2ecc71";
+            finalScoreText.innerText = Você venceu! ${selectedTarget} foi ${actionText}.\n\nVocê: ${playerScore} | STF/IA: ${cpuScore};
+        } else {
+            winnerText.innerText = "DERROTA NAS URNAS!";
+            winnerText.style.color = "#e74c3c";
+            finalScoreText.innerText = A oposição impediu a ação sobre ${selectedTarget}.\n\nVocê: ${playerScore} | STF/IA: ${cpuScore};
+        }
+
+        endScreen.style.display = 'flex';
+    }
+
+    function jump() {
+        if (horse.grounded && gameRunning) {
+            horse.vy = horse.jumpPower;
+            horse.grounded = false;
         }
     }
 
-    draw();
-    requestAnimationFrame(update);
-}
-
-function checkCollision(a, b) {
-    return a.x < b.x + b.width && a.x + a.width > b.x &&
-           a.y < b.y + b.height && a.y + a.height > b.y;
-}
-
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Chão
-    ctx.fillStyle = '#27ae60';
-    ctx.fillRect(0, 330, canvas.width, 70);
-
-    // Candidato Empurrando (Atrás)
-    ctx.fillStyle = pusherCandidate.color;
-    ctx.fillRect(pusherCandidate.x, pusherCandidate.y, pusherCandidate.width, pusherCandidate.height);
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 12px Arial';
-    ctx.fillText(pusherCandidate.name, pusherCandidate.x - 2, pusherCandidate.y - 10);
-
-    // Candidato Alvo (À frente)
-    ctx.fillStyle = targetCandidate.color;
-    ctx.fillRect(targetCandidate.x, targetCandidate.y, targetCandidate.width, targetCandidate.height);
-    ctx.fillStyle = '#fff';
-    ctx.fillText(targetCandidate.name, targetCandidate.x + 2, targetCandidate.y - 10);
-
-    // Cavalo (Dark Horse)
-    ctx.fillStyle = '#2c3e50';
-    ctx.fillRect(horse.x, horse.y, horse.width, horse.height);
-    ctx.fillStyle = '#f1c40f';
-    ctx.fillText("Dark Horse", horse.x - 5, horse.y - 10);
-
-    // Pareceres do STF
-    decrees.forEach(d => {
-        ctx.fillStyle = d.color;
-        ctx.fillRect(d.x, d.y, d.width, d.height);
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 11px Arial';
-        ctx.fillText("STF: " + d.type, d.x + 6, d.y + 22);
-    });
-}
-
-function endGame() {
-    gameRunning = false;
-    clearInterval(timerInterval);
-    
-    const endScreen = document.getElementById('endScreen');
-    const winnerText = document.getElementById('winnerText');
-    const finalScoreText = document.getElementById('finalScoreText');
-
-    let targetText = selectedTarget;
-    let actionText = selectedGoal === 'PRENDER' ? 'preso' : 'solto';
-
-    if (playerScore > cpuScore) {
-        winnerText.innerText = "VITÓRIA ELEITORAL!";
-        winnerText.style.color = "#2ecc71";
-        finalScoreText.innerText = Você conseguiu! ${targetText} foi ${actionText} antes da eleição.\n\nVocê: ${playerScore} | Máquina: ${cpuScore};
-    } else if (cpuScore > playerScore) {
-        winnerText.innerText = "DERROTA NAS URNAS!";
-        winnerText.style.color = "#e74c3c";
-        finalScoreText.innerText = A Máquina impediu que ${targetText} fosse ${actionText}.\n\nVocê: ${playerScore} | Máquina: ${cpuScore};
-    } else {
-        winnerText.innerText = "EMPATE TÉCNICO!";
-        winnerText.style.color = "#f1c40f";
-        finalScoreText.innerText = Placar Empatado! A decisão ficou para o 2º Turno.\n\nVocê: ${playerScore} | Máquina: ${cpuScore};
-    }
-
-    endScreen.style.display = 'flex';
-}
-
-function resetGame() {
-    document.getElementById('endScreen').style.display = 'none';
-    document.getElementById('startScreen').style.display = 'flex';
-}
-
-function jump() {
-    if (horse.grounded && gameRunning) {
-        horse.vy = horse.jumpPower;
-        horse.grounded = false;
-    }
-}
-
-document.getElementById('jumpBtn').addEventListener('click', jump);
-window.addEventListener('touchstart', jump);
-window.addEventListener('keydown', (e) => { if (e.code === 'Space') jump(); });
+    document.getElementById('startBtn').onclick = startGame;
+    document.getElementById('restartBtn').onclick = () => {
+        document.getElementById('endScreen').style.display = 'none';
+        document.getElementById('startScreen').style.display = 'flex';
+    };
+    document.getElementById('jumpBtn').onclick = jump;
+    window.onkeydown = (e) => { if (e.code === 'Space') jump(); };
+});
 </script>
 </body>
 </html>
